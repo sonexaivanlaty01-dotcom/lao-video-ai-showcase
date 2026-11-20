@@ -1,0 +1,10 @@
+=== ctc-omni-v1 (CER %, ต่ำ = ดี) ===
+FLEURS 100                                    23.3
+ทีม: Download (2)_1794653833                  25.7
+ทีม: Download (3)_1794685833                  15.0
+ทีม: Download (6)_1794783540                  14.2
+ทีม: lekha-chai-lao-30s                        8.1
+SiangLao test                                 13.8
+GPU: 332s / เสียง 12631s = เร็วกว่าเวลาจริง 38.1 เท่า
+CPU (FLEURS 100): 326s / เสียง 1150s = 3.5 เท่า
+Ultra3 ⚡ CPU (FLEURS 100): 242s / เสียง 1150s = 4.8 เท่า

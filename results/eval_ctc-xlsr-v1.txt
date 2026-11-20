@@ -1,0 +1,10 @@
+=== ctc-xlsr-v1 (CER %, ต่ำ = ดี) ===
+FLEURS 100                                    20.6
+ทีม: Download (2)_1794653833                  28.2
+ทีม: Download (3)_1794685833                  14.5
+ทีม: Download (6)_1794783540                  11.5
+ทีม: lekha-chai-lao-30s                        7.1
+SiangLao test                                  7.8
+GPU: 340s / เสียง 12631s = เร็วกว่าเวลาจริง 37.1 เท่า
+CPU (FLEURS 100): 308s / เสียง 1150s = 3.7 เท่า
+Ultra3 ⚡ CPU (FLEURS 100): 247s / เสียง 1150s = 4.7 เท่า

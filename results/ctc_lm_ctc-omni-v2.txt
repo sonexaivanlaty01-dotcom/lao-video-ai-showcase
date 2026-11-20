@@ -1,0 +1,18 @@
+=== ctc-omni-v2: greedy vs beam+LM (char 6-gram ขายได้) ===
+จูนบน FLEURS dev: ดีสุด alpha/beta = (0.5, 1.0) → 18.7 (greedy 20.7)
+FLEURS dev 100 (จูน)                       greedy  20.7 → LM  18.7
+FLEURS 100                                 greedy  20.3 → LM  17.4
+ทีม: Download (2)_1794653833               greedy  21.8 → LM  18.5
+ทีม: Download (3)_1794685833               greedy  11.4 → LM  10.3
+ทีม: Download (6)_1794783540               greedy  12.9 → LM  10.7
+ทีม: lekha-chai-lao-30s                    greedy   9.0 → LM   9.0
+เวลาถอดแบบ beam (CPU Python): 6 วิ สำหรับ 45 นาทีเสียง
+
+=== เทียบคลัง LM (v2 int8/fp32 beam, alpha 0.5 beta 1.0) ===
+คลัง                         FLEURS  D2    D3    D6    lekha  ทีมเฉลี่ย
+greedy (ไม่มี LM)              20.3  21.8  11.4  12.9   9.0   13.8
+LM v1 เล็ก 5.4k ประโยค          18.1  17.3  10.5  11.3   8.4   11.9   (lao_char6_sell_v1.pkl)
++ วิกิพีเดียลาว เท่ากัน          17.6  18.3  10.6  10.6   9.6   12.3   (lao_char6_sell_wiki.pkl)
++ วิกิ, ภาษาพูด x4 (ใช้ตัวนี้)    17.4  18.5  10.3  10.7   9.0   12.1   (lao_char6_sell.pkl = _wiki_w4)
+ทีมต่างกัน 0.2 = อยู่ในความแกว่งของชุดสอบเล็ก · วิกิช่วยคำเฉพาะ (ชื่อคน/สถานที่/วิชาการ) เลยเลือกตัวที่มีวิกิ
+เครดิต: Wikipedia ภาษาลาว (lo.wikipedia.org) ผู้เขียนวิกิพีเดีย, CC BY-SA 4.0

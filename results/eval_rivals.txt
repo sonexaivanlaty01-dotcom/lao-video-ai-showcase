@@ -1,0 +1,47 @@
+
+=== จัดอันดับ (CER %, ต่ำ = ดี) ===
+ชุดสอบ                                          Ultra3 ⚡ (เรา)       xls-r-lao-asr     xlsr-53-lao-asr   ctc-xlsr-v1 (เรา)   omniASR-300M-Laos
+FLEURS 100                                                16.0                28.0                27.6                20.6                15.9
+ทีม: Download (2)_1794653833                              12.3                34.8                35.6                28.2                24.9
+ทีม: Download (3)_1794685833                               7.8                21.8                20.9                14.5                11.7
+ทีม: Download (6)_1794783540                               3.6                19.2                19.3                11.5                11.3
+ทีม: lekha-chai-lao-30s                                    8.7                18.0                19.9                 7.1                 5.3
+SiangLao test                                              1.8                 9.1                 9.6                 7.8                 7.4
+
+=== OmniASR ลาว v1 ของเรา (ctc-omni-v1, ขายได้ ✅) — วัด 17 พ.ย. 2026 (scripts/eval_ctc_local.py) ===
+FLEURS 100 23.3 · Download (2) 25.7 · Download (3) 15.0 · Download (6) 14.2 · lekha-chai 8.1 · SiangLao test 13.8
+ฐาน facebook/omniASR-CTC-300M (Apache-2.0) + FLEURS train (CC-BY-4.0) + KitTzk (CC-BY-4.0) + Common Voice (CC0) = 3,703 คลิป
+ไม่ใช้ SiangLao/RFA/WorldSpeech · 3,465 ก้าว 157 นาที บน Kaggle T4 · FLEURS dev ระหว่างเทรน 28.6 → 23.3% (ก่อนเทรน ~23%)
+
+=== OmniASR ลาว v2 ของเรา (ctc-omni-v2, ขายได้ ✅) — วัด 17 พ.ย. 2026 ===
+FLEURS 100 20.3 (−3.0) · Download (2) 21.8 (−3.9) · Download (3) 11.4 (−3.6) · Download (6) 12.9 (−1.3) · lekha-chai 9.0 (+0.9) · SiangLao test 10.6 (−3.2)
+เฉลี่ยคลิปทีม 4 ชุด: v1 15.8 → v2 13.8
+สูตรเดียวกับ v1 + เสียง YouTube CC-BY 2,895 ท่อน = 5.23 ชม. (เฉลยจาก Qwen3 lao-H Apache-2.0 คัดที่ตรงกับ omni v1 ≤35%)
+12 รอบ 4,944 ก้าว 3.5 ชม. บน Kaggle T4 · FLEURS dev ระหว่างเทรน 28.9 → 20.7%
+(lekha ยาว 30 วิ ต่าง 0.9 = ไม่กี่ตัวอักษร)
+
+=== Qwen3-ASR 0.6B ลาว (Phonepadith/qwen3-asr-laos) — วัดเฉพาะ FLEURS + คลิปทีม (scripts/eval_qwen3asr.py) ===
+FLEURS 100 21.4 · Download (2) 15.2 · Download (3) 11.6 · Download (6) 11.6 · lekha-chai 11.2
+ความเร็ว GPU (GTX 1650 fp16): 0.8 เท่าของเวลาจริง (ช้ากว่าเวลาจริง)
+
+=== Qwen3-ASR 1.7B ลาว (LuoYiSULIXAY/qwen3-asr-lao-H, Apache-2.0, gated) — FLEURS + คลิปทีม ===
+FLEURS 100 20.7 · Download (2) 15.2 · Download (3) 11.1 · Download (6) 9.3 · lekha-chai 5.6
+ความเร็ว GPU (GTX 1650 8-bit bitsandbytes): 0.2 เท่าของเวลาจริง — บน T4 fp16 จะเร็วกว่านี้มาก
+
+=== ความเร็ว (เร็วกว่าเวลาจริงกี่เท่า, สูง = ดี) ===
+                                        GPU (ทุกชุด 12,631s)   CPU (FLEURS 100, 1,150s)
+Ultra3 ⚡ (CT2 int8)                                  30.4                      4.7
+SiangLao xls-r-lao-asr (fp32)                        36.2                      2.3*
+ctc-xlsr-v1 (เรา, fp32)                              37.1                      3.7
+omniASR-300M-Laos (Phonepadith, fp32)                36.9                      3.0
+ctc-omni-v1 (เรา ขายได้, fp32)                       38.1                      3.5
+ctc-omni-v2 (เรา ขายได้, fp32)                       37.3                      3.8
+ctc-omni-v1 ONNX int8 (ย่อ 355MB)                      —                       6.3
+(รอบนี้ Ultra3 ⚡ CPU วัดซ้ำได้ 4.8)
+* วัดครั้งก่อนบนคลิปคนละชุด
+
+หมายเหตุ
+- ctc-xlsr-v1 = XLS-R 300M สอนลาวเอง 10,308 ก้าวบน Kaggle (scripts/train_ctc.py) — ห้ามใช้เชิงพาณิชย์ (ข้อมูล SiangLao/RFA)
+- omniASR-300M-Laos = huggingface.co/Phonepadith/omniASR_CTC_300M_v2_Laos (ฐาน Meta omniASR Apache-2.0, ตัวสอนเพิ่มใช้สัญญา AIDCTECH, ไม่บอกข้อมูลเทรน — อาจเคยเห็น FLEURS/SiangLao)
+- SiangLao test รั่วอยู่ใน SiangLao train · Download (6) ซับต้นแบบแก้จากผล AI เรา → เอียงเข้าหา Ultra3
+- วัดด้วย scripts/eval_rivals.py และ scripts/eval_ctc_local.py ตัวคิดคะแนนเดียวกัน (norm_for_cer)

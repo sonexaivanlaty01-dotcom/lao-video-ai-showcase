@@ -1,0 +1,9 @@
+=== ctc-omni-v2: greedy vs beam+LM (char 6-gram ขายได้) ===
+จูนบน FLEURS dev: ดีสุด alpha/beta = (0.5, 1.0) → 19.2 (greedy 20.7)
+FLEURS dev 100 (จูน)                       greedy  20.7 → LM  19.2
+FLEURS 100                                 greedy  20.3 → LM  18.1
+ทีม: Download (2)_1794653833               greedy  21.8 → LM  17.3
+ทีม: Download (3)_1794685833               greedy  11.4 → LM  10.5
+ทีม: Download (6)_1794783540               greedy  12.9 → LM  11.3
+ทีม: lekha-chai-lao-30s                    greedy   9.0 → LM   8.4
+เวลาถอดแบบ beam (CPU Python): 6 วิ สำหรับ 45 นาทีเสียง

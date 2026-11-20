@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<title>render</title>
+<!-- หน้านี้ใช้ตอนส่งออก MP4 เท่านั้น: วาดซับบนพื้นโปร่งใสด้วยตัววาดเดียวกับหน้าแก้ซับ -->
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  #stage { position: fixed; inset: 0; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="cap"></div></div>
+<script src="/fonts/caprender.js"></script>
+<script>
+let CFG = null;
+window.setup = (cfg) => { CFG = cfg; };
+window.frameAt = (t) => {
+  const seg = CapRender.segAt(CFG.segments, t);
+  return CapRender.render(document.getElementById("cap"), CFG.style, seg, t, CFG.h);
+};
+CapRender.loadFonts("/fonts/v2/").then(() => { window.renderReady = true; });
+</script>
+</body>
+</html>

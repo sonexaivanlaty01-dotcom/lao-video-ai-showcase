@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แต่งซับลาว</title>
+<style>
+  :root { --bg: #f4f4f2; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #deded9; --accent: #e8492f; --soft: #f0efeb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151517; --panel: #1f1f22; --ink: #eeeeec; --muted: #9a9aa0; --line: #34343a; --accent: #ff6a4d; --soft: #28282c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Leelawadee UI", "Noto Sans Thai", system-ui, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 18px 16px 40px; }
+  h1 { font-size: 21px; margin: 0 0 2px; }
+  .sub { color: var(--muted); margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .stage { position: relative; aspect-ratio: 9/16; max-height: 80vh; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #333 url("preview/bg.jpg") center/cover; }
+  .stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  textarea { width: 100%; min-height: 60px; font: 18px/1.5 "LaoVideo-Mon", sans-serif; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+  .note { font-size: 12px; color: var(--muted); margin: 4px 0; }
+  .chip { border: 1px solid var(--line); background: var(--soft); border-radius: 999px; padding: 3px 10px; cursor: pointer; font: inherit; font-size: 13px; color: inherit; margin: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>แต่งซับลาว · ฟอนต์ + ท็อปปิ้ง</h1>
+  <p class="sub">หน้าทดลองสไตล์ (ตัววาดเดียวกับหน้าแก้ซับและไฟล์ MP4 ที่ส่งออก) · ฟอนต์ดัดแปลงจาก Noto Sans Lao (SIL OFL 1.1)</p>
+  <div class="grid">
+    <div>
+      <div class="stage" id="stage"><div id="cap"></div></div>
+      <div class="panel" style="margin-top:12px">
+        <textarea id="text">ນີ້ຄືເລຂາ AI ປະຈຳກຸ່ມ</textarea>
+        <p class="note">เว้นวรรค = แยกคำ · *คำ* = คำเน้น</p>
+        <div id="samples"></div>
+        <p class="note">วิดีโอพื้นหลัง (เปิดในเครื่อง ไม่อัปโหลด): <input type="file" id="vid" accept="video/*"></p>
+      </div>
+    </div>
+    <div class="panel" id="editor"></div>
+  </div>
+</main>
+<script src="caprender.js"></script>
+<script src="capeditor.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const SAMPLES = ["ນີ້ຄືເລຂາ AI ປະຈຳກຸ່ມ", "ໃຊ້ *ຟຣີ* 0 ກີບ ທຸກຢ່າງຄົບ", "ເກື້ອ ຫຼື ໜ້າ ນ້ຳ ໝໍ້ ຢູ່", "ບໍ່ຂຽນໂຄດ ບໍ່ສຽງເງິນ ບໍ່ມີທີມ"];
+let style;
+try { style = JSON.parse(localStorage.getItem("laoCapStyle2") || "null"); } catch { style = null; }
+style = CapRender.normalize(style);
+
+(async () => {
+  await CapRender.loadFonts("v2/");
+  CapEditor.mount($("#editor"), style, (s) => { style = s; try { localStorage.setItem("laoCapStyle2", JSON.stringify(s)); } catch {} });
+  SAMPLES.forEach((s) => { const b = document.createElement("button"); b.className = "chip"; b.textContent = s.replace(/\*/g, ""); b.style.fontFamily = '"LaoVideo-Mon"'; b.onclick = () => ($("#text").value = s); $("#samples").append(b); });
+  // นาฬิกาจำลอง: บรรทัดเดียววนซ้ำ (ช่วงละ 0.45 วิ/คำ + พัก 1 วิ)
+  const t0 = performance.now();
+  const loop = () => {
+    const text = $("#text").value;
+    const n = Math.max(1, text.trim().split(/\s+/).length);
+    const dur = n * 0.45 + 1.2;
+    const t = ((performance.now() - t0) / 1000) % (dur + 0.4);
+    CapRender.render($("#cap"), style, { start: 0, end: dur, text }, t, $("#stage").clientHeight);
+    requestAnimationFrame(loop);
+  };
+  loop();
+})();
+$("#vid").onchange = (e) => { const f = e.target.files[0]; if (!f) return; let v = $("#stage video");
+  if (!v) { v = document.createElement("video"); v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; $("#stage").prepend(v); }
+  v.src = URL.createObjectURL(f); v.play(); };
+</script>
+</body>
+</html>

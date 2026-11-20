@@ -1,0 +1,5 @@
+train_v5 (Kaggle lao-asr-train-v5, 2026-11-15, GPU T4 x2, 112 นาที)
+ข้อมูล: siang_lao 4427 + kittzk 1742 + cv 152 + rfa 2685 + rfa2 3017 = 13832 คลิป (+ FLEURS train)
+CER ระหว่างเทรน (dev 100): step 865 = 18.0% | step 1730 = 26.0% | step 2595 = 16.1% (best)
+สอบ FLEURS test: 30 คลิป = 15.9% | 100 คลิป = 16.0%   (v3: 18.5/18.0, v4: 16.9/16.8)
+log เต็มอยู่บน Kaggle: lao-asr-train-v5 → Output → train_v5_log.txt

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>อัดเสียงอ่านประโยค</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600&family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e4e2dc;
+  --accent: #c2410c; --accent-soft: #fff1e8; --ok: #15803d; --ok-soft: #e8f6ec; --rec: #dc2626;
+  --font: "Noto Sans Lao", "Noto Sans Thai", "Phetsarath OT", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161616; --panel: #1f1f1f; --ink: #ececec; --muted: #9a9a9f; --line: #333;
+          --accent: #fb923c; --accent-soft: #3a2414; --ok: #4ade80; --ok-soft: #14301d; --rec: #f87171; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font); }
+.wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+button { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 10px 16px; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+input[type=text] { font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.sent { font-size: 28px; line-height: 1.8; text-align: center; padding: 22px 6px; min-height: 120px; }
+.big { display: block; width: 100%; padding: 18px; font-size: 20px; font-weight: 600; border: 0; color: #fff; background: var(--accent); margin-top: 6px; }
+.big.on { background: var(--rec); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .75; } }
+.row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.row button { flex: 1; }
+.send { background: var(--ok); color: #fff; border: 0; font-weight: 600; }
+.stat { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+.msg { min-height: 24px; text-align: center; font-size: 14px; margin-top: 10px; color: var(--muted); }
+.msg.err { color: var(--rec); }
+.consent { white-space: pre-line; font-size: 15px; background: var(--accent-soft); border-radius: 10px; padding: 12px; margin: 12px 0; }
+label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.hide { display: none; }
+.hint { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎙️ อัดเสียงอ่านประโยค ช่วยสอน AI ภาษาลาว</h1>
+  <div class="sub">อ่านประโยคภาษาลาวที่แสดง ด้วยน้ำเสียงปกติเหมือนคุยกัน · คนละ 30 นาที ≈ 300 ประโยค</div>
+
+  <div id="who" class="card">
+    <div>ชื่อผู้อ่าน (ชื่อเล่นก็ได้)</div>
+    <input id="name" type="text" placeholder="เช่น น้อย, สมพร">
+    <div class="consent" id="ctext"></div>
+    <label><input type="checkbox" id="agree"> <span>อ่านแล้วและยินยอม</span></label>
+    <div class="row"><button class="send" id="start">เริ่มอัด</button></div>
+    <div class="msg" id="m0"></div>
+  </div>
+
+  <div id="rec" class="card hide">
+    <div class="stat"><span id="spk"></span><span>อ่านแล้ว <b id="done">0</b> · ทั้งทีม <b id="all">0</b></span></div>
+    <div class="sent" id="sent">…</div>
+    <button class="big" id="btn">● กดเพื่ออัด</button>
+    <audio id="play" controls class="hide" style="width:100%;margin-top:12px"></audio>
+    <div class="row">
+      <button id="again" disabled>↺ อัดใหม่</button>
+      <button id="skip">ข้าม ➜</button>
+      <button class="send" id="send" disabled>✓ ส่ง</button>
+    </div>
+    <div class="msg" id="m1"></div>
+    <div class="hint">คำแนะนำ: อยู่ที่เงียบ · ถือโทรศัพท์ห่างปากประมาณ 1 ฝ่ามือ · อ่านผิดกด "อัดใหม่" · ประโยคที่อ่านไม่ได้กด "ข้าม"</div>
+  </div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+let speaker = "", text = "", blob = null, rec = null, chunks = [], stream = null;
+
+async function api(url, opt) {
+  const r = await fetch(url, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || r.statusText);
+  return j;
+}
+function msg(id, t, err) { const e = $(id); e.textContent = t || ""; e.className = "msg" + (err ? " err" : ""); }
+try { $("#name").value = localStorage.getItem("rec_name") || ""; } catch (e) {}
+
+async function next(skip) {
+  blob = null; $("#play").classList.add("hide"); $("#send").disabled = true; $("#again").disabled = true;
+  const j = await api(`/api/record/next?speaker=${encodeURIComponent(speaker)}&skip=${encodeURIComponent(skip || "")}`);
+  text = j.text; $("#sent").textContent = text; $("#done").textContent = j.done; $("#all").textContent = j.total_all;
+  return j;
+}
+
+(async () => {
+  try { const j = await api(`/api/record/next?speaker=_preview`); $("#ctext").textContent = j.consent_text; }
+  catch (e) { $("#ctext").textContent = e.message; }
+})();
+
+$("#start").onclick = async () => {
+  speaker = $("#name").value.trim();
+  if (!speaker) return msg("#m0", "ใส่ชื่อก่อน", true);
+  if (!$("#agree").checked) return msg("#m0", "ต้องยินยอมก่อนจึงอัดได้", true);
+  try {
+    await api("/api/record/consent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ speaker, agree: true }) });
+    try { localStorage.setItem("rec_name", speaker); } catch (e) {}
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false } });
+    $("#who").classList.add("hide"); $("#rec").classList.remove("hide"); $("#spk").textContent = "👤 " + speaker;
+    await next();
+  } catch (e) { msg("#m0", "เปิดไมโครโฟนไม่ได้ หรือผิดพลาด: " + e.message, true); }
+};
+
+$("#btn").onclick = () => {
+  if (rec && rec.state === "recording") { rec.stop(); return; }
+  chunks = []; msg("#m1", "");
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = () => {
+    blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+    const p = $("#play"); p.src = URL.createObjectURL(blob); p.classList.remove("hide");
+    $("#btn").classList.remove("on"); $("#btn").textContent = "● กดเพื่ออัด";
+    $("#send").disabled = false; $("#again").disabled = false;
+  };
+  rec.start(); $("#btn").classList.add("on"); $("#btn").textContent = "■ กำลังอัด… กดเพื่อหยุด";
+};
+$("#again").onclick = () => { blob = null; $("#play").classList.add("hide"); $("#send").disabled = true; $("#btn").click(); };
+$("#skip").onclick = () => next(text).catch(e => msg("#m1", e.message, true));
+$("#send").onclick = async () => {
+  if (!blob) return;
+  $("#send").disabled = true; msg("#m1", "กำลังส่ง…");
+  const fd = new FormData(); fd.append("speaker", speaker); fd.append("text", text); fd.append("file", blob, "rec.webm");
+  try {
+    const j = await api("/api/record", { method: "POST", body: fd });
+    msg("#m1", `✓ บันทึกแล้ว (${j.seconds} วิ)`); await next();
+  } catch (e) { msg("#m1", e.message, true); $("#send").disabled = false; }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+เสียงทดสอบรวม 23.3 นาที (181 คลิป)
+PyTorch เดิม (Ultra3)      |  137.8s ( 10.1x realtime) | FLEURS 100  15.7% | ทีม: Download (2  12.3% | ทีม: Download (3   8.1% | ทีม: lekha-chai-   9.0%
+CT2 int8_float32 b16       |   55.6s ( 25.2x realtime) | FLEURS 100  16.0% | ทีม: Download (2  12.3% | ทีม: Download (3   7.8% | ทีม: lekha-chai-   8.7%
+CT2 int8 b16               |   56.0s ( 25.0x realtime) | FLEURS 100  16.0% | ทีม: Download (2  12.3% | ทีม: Download (3   7.8% | ทีม: lekha-chai-   8.7%
+CT2 int8_float32 b24       | ERROR CUDA failed with error out of memory
+CT2 f16-weights float32    |  106.9s ( 13.1x realtime) | FLEURS 100  15.7% | ทีม: Download (2  12.3% | ทีม: Download (3   8.1% | ทีม: lekha-chai-   9.0%
+MMS-1b-all (cpu float32) | 1270s (1.1x realtime) | FLEURS 100  20.4% | ทีม: Download (2)_17  25.1% | ทีม: Download (3)_17  15.4% | ทีม: lekha-chai-lao-  14.3%
+--- 2026-11-16 ทดลองแนวทาง CTC ---
+XLS-R 300M CTC (PyTorch GPU fp32, ยังไม่เทรน วัดแค่ความเร็ว): 16x realtime  (Ultra3 PyTorch 10x, Ultra3 CT2 int8 25x)
+CPU: XLS-R 300M PyTorch fp32 2.3x realtime | Ultra3 CT2 int8 4.3x realtime
+MMS-1b-all ความแม่น (ไม่ปรับกับข้อมูลเรา): FLEURS 20.4% | ทีม 25.1 / 15.4 / 14.3   (Ultra3: 15.7 | 12.3 / 8.1 / 9.0)

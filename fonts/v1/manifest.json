@@ -1,0 +1,66 @@
+{
+  "version": "v1",
+  "family": "LaoVideo",
+  "license": "SIL OFL 1.1 (ดัดแปลงจาก Noto Sans Lao / Noto Sans Lao Looped)",
+  "styles": [
+    {
+      "id": "Mon",
+      "lao": "ມົນ",
+      "th": "หนาโค้งมน",
+      "src": "NotoSansLaoLooped-VF.ttf",
+      "wght": 800,
+      "ops": [
+        [
+          "open",
+          44
+        ]
+      ],
+      "file": "LaoVideo-Mon",
+      "glyphs": 487,
+      "changed": 480,
+      "empty": 7
+    },
+    {
+      "id": "Khop",
+      "lao": "ຂອບ",
+      "th": "ตัวกลวงมีขอบ (หัวข้อ/ป้าย)",
+      "src": "NotoSansLaoLooped-VF.ttf",
+      "wght": 900,
+      "ops": [
+        [
+          "open",
+          20
+        ],
+        [
+          "hollow",
+          46
+        ]
+      ],
+      "file": "LaoVideo-Khop",
+      "glyphs": 487,
+      "changed": 480,
+      "empty": 7
+    },
+    {
+      "id": "Num",
+      "lao": "ນຸ່ມ",
+      "th": "นุ่มน่ารัก (ไม่มีหัว)",
+      "src": "NotoSansLao-VF.ttf",
+      "wght": 760,
+      "ops": [
+        [
+          "open",
+          48
+        ],
+        [
+          "close",
+          22
+        ]
+      ],
+      "file": "LaoVideo-Num",
+      "glyphs": 466,
+      "changed": 460,
+      "empty": 6
+    }
+  ]
+}

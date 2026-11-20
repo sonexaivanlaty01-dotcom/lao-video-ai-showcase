@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ฟังเทียบ AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600&family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e4e2dc;
+  --accent: #c2410c; --accent-soft: #fff1e8; --ok: #15803d; --ok-soft: #e8f6ec;
+  --font: "Noto Sans Lao", "Noto Sans Thai", "Phetsarath OT", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161616; --panel: #1f1f1f; --ink: #ececec; --muted: #9a9a9f; --line: #333;
+          --accent: #fb923c; --accent-soft: #3a2414; --ok: #4ade80; --ok-soft: #14301d; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font); }
+.wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+.prog { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 8px 0 18px; }
+.prog i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .2s; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.top .n { color: var(--muted); font-size: 14px; margin-left: auto; }
+button { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 14px; }
+button:hover { border-color: var(--accent); }
+.play { background: var(--accent); color: #fff; border: 0; font-weight: 600; }
+.opt { display: block; width: 100%; text-align: left; padding: 14px 16px; margin-bottom: 10px; font-size: 20px; line-height: 1.7; }
+.opt b { display: inline-block; min-width: 28px; color: var(--accent); font-size: 15px; }
+.opt.sel { background: var(--ok-soft); border-color: var(--ok); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row button.sel { background: var(--ok-soft); border-color: var(--ok); }
+.nav { display: flex; justify-content: space-between; margin-top: 16px; }
+.result { text-align: center; }
+.result table { margin: 16px auto; border-collapse: collapse; font-size: 18px; }
+.result td { padding: 6px 18px; border-bottom: 1px solid var(--line); }
+.result td:last-child { text-align: right; font-weight: 600; }
+.hint { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚖️ ฟังเทียบ AI สองตัวแบบปิดชื่อ</h1>
+  <div class="sub">ฟังเสียงแล้วเลือกว่า <b>A</b> หรือ <b>B</b> เขียนถูกกว่า ระบบไม่บอกว่าตัวไหนเป็นรุ่นไหน จนกว่าจะตอบครบ</div>
+  <div class="prog"><i id="bar"></i></div>
+  <div id="app" class="card">กำลังโหลด…</div>
+</div>
+<audio id="aud" preload="auto"></audio>
+<script>
+const $ = s => document.querySelector(s);
+let pairs = [], i = 0;
+const aud = $("#aud");
+
+async function api(url, opt) {
+  const r = await fetch(url, opt);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
+  return r.json();
+}
+const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const doneCount = () => pairs.filter(p => p.vote).length;
+
+function render() {
+  $("#bar").style.width = (100 * doneCount() / pairs.length) + "%";
+  const p = pairs[i];
+  const v = p.vote;
+  $("#app").innerHTML = `
+    <div class="top">
+      <button class="play" id="play">▶ ฟังเสียง</button>
+      <span class="hint">กด Space เพื่อฟังซ้ำ</span>
+      <span class="n">ข้อ ${i + 1} / ${pairs.length}</span>
+    </div>
+    <button class="opt ${v === "A" ? "sel" : ""}" data-c="A"><b>A</b> ${esc(p.A)}</button>
+    <button class="opt ${v === "B" ? "sel" : ""}" data-c="B"><b>B</b> ${esc(p.B)}</button>
+    <div class="row">
+      <button data-c="same" class="${v === "same" ? "sel" : ""}">🤝 ถูกพอๆ กัน</button>
+      <button data-c="none" class="${v === "none" ? "sel" : ""}">❌ ผิดทั้งคู่ (พอๆ กัน)</button>
+    </div>
+    <div class="nav">
+      <button id="prev" ${i === 0 ? "disabled" : ""}>← ข้อก่อน</button>
+      <span class="hint">ตอบแล้ว ${doneCount()} / ${pairs.length}</span>
+      <button id="next">${i === pairs.length - 1 ? "ดูผล →" : "ข้อถัดไป →"}</button>
+    </div>`;
+  $("#play").onclick = play;
+  $("#prev").onclick = () => { i--; render(); play(); };
+  $("#next").onclick = () => { if (i < pairs.length - 1) { i++; render(); play(); } else showResult(); };
+  document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => vote(b.dataset.c));
+}
+
+function play() {
+  aud.src = `/api/ab/audio/${pairs[i].id}`;
+  aud.play().catch(() => {});
+}
+
+async function vote(c) {
+  pairs[i].vote = c;
+  await api("/api/ab/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: pairs[i].id, choice: c }) });
+  if (i < pairs.length - 1) { i++; render(); play(); }
+  else if (doneCount() === pairs.length) showResult();
+  else render();
+}
+
+async function showResult() {
+  const left = pairs.findIndex(p => !p.vote);
+  if (left >= 0) { i = left; render(); play(); alertBox(`ยังเหลือข้อที่ยังไม่ได้ตอบ (ข้อ ${left + 1})`); return; }
+  const r = await api("/api/ab/result");
+  $("#bar").style.width = "100%";
+  const names = { v3: "AI ของเรา v3", v4: "AI ของเรา v4", v5: "AI ของเรา v5", ultra: "AI ของเรา Ultra (v3+v4)", ultra2: "AI ของเรา Ultra2 (v3+v5)", v6: "AI ของเรา v6", ultra3: "AI ของเรา Ultra3 (v3+v6)", ultra3fast: "AI ของเรา Ultra3 ⚡ เร็ว", omni1int8: "OmniASR v1 ⚡ ย่อ (ขายได้)", omni2int8: "OmniASR v2 ⚡ ย่อ (ขายได้)" };
+  const rows = Object.entries(r.score).map(([k, n]) => `<tr><td>${names[k] || k}</td><td>${n}</td></tr>`).join("");
+  $("#app").innerHTML = `<div class="result">
+    <h2>🎉 ตอบครบ ${r.voted} ข้อแล้ว</h2>
+    <table>${rows}</table>
+    <p class="hint">บอกผลนี้กับ Claude ได้เลย ระบบบันทึกคะแนนไว้แล้ว</p>
+    <button id="again">ย้อนดูคำตอบ</button></div>`;
+  $("#again").onclick = () => { i = 0; render(); };
+}
+
+function alertBox(msg) {
+  const d = document.createElement("div");
+  d.textContent = msg;
+  d.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;";
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 2500);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space" && pairs.length) { e.preventDefault(); play(); }
+  if (e.key === "a" || e.key === "1") vote("A");
+  if (e.key === "b" || e.key === "2") vote("B");
+});
+
+api("/api/ab").then(d => {
+  pairs = d.pairs;
+  i = Math.max(0, pairs.findIndex(p => !p.vote));
+  if (i < 0) i = 0;
+  if (doneCount() === pairs.length) showResult(); else render();
+}).catch(e => { $("#app").textContent = "⚠️ " + e.message; });
+</script>
+</body>
+</html>

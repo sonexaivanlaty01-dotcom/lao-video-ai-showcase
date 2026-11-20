@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แก้ซับลาว</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600&family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e4e2dc;
+  --accent: #c2410c; --accent-soft: #fff1e8; --ok: #15803d; --ok-soft: #e8f6ec; --warn: #a16207;
+  --active: #fff7d6; --danger: #b91c1c;
+  --font: "Noto Sans Lao", "Noto Sans Thai", "Phetsarath OT", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161616; --panel: #1f1f1f; --ink: #ececec; --muted: #9a9a9f; --line: #333;
+    --accent: #fb923c; --accent-soft: #3a2414; --ok: #4ade80; --ok-soft: #14301d; --warn: #facc15;
+    --active: #3a3418; --danger: #f87171;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font); }
+header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 17px; margin: 0; }
+header .stat { margin-left: auto; color: var(--muted); font-size: 13px; }
+header .stat b { color: var(--ok); }
+.layout { display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 49px); }
+aside { border-right: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 12px; }
+aside label.upload { display: block; text-align: center; padding: 10px; border: 1.5px dashed var(--line); border-radius: 10px; cursor: pointer; color: var(--muted); margin-bottom: 12px; }
+aside label.upload:hover { border-color: var(--accent); color: var(--accent); }
+.clip { padding: 8px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; }
+.clip:hover { background: var(--bg); }
+.clip.sel { background: var(--accent-soft); }
+.clip .n { font-weight: 600; word-break: break-all; }
+.clip .m { font-size: 12px; color: var(--muted); }
+.badge { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 99px; margin-right: 4px; }
+.b-none { background: var(--line); color: var(--muted); }
+.b-draft { background: #fef3c7; color: #92400e; }
+.b-corrected { background: var(--ok-soft); color: var(--ok); }
+main { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+.player { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.vwrap { position: relative; max-width: 720px; margin: 0 auto; background: #000; border-radius: 10px; overflow: hidden; }
+video { display: block; width: 100%; max-height: 42vh; background: #000; }
+.capstage { position: absolute; pointer-events: none; overflow: hidden; } /* วางทับเฉพาะพื้นที่ภาพจริงของวิดีโอ */
+.stylepanel { max-width: 900px; margin: 10px auto 0; border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px 12px; background: var(--bg); max-height: 46vh; overflow: auto; }
+.stylepanel { --soft: var(--panel); }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; max-width: 720px; margin: 10px auto 0; }
+.bar .grow { flex: 1; }
+.hint { font-size: 12px; color: var(--muted); }
+button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.done { background: var(--ok); border-color: var(--ok); color: #fff; }
+button:disabled { opacity: .5; cursor: wait; }
+select { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 5px 8px; }
+.list { overflow: auto; padding: 12px 16px 80px; }
+.seg { display: grid; grid-template-columns: 34px 1fr; gap: 4px 10px; max-width: 900px; margin: 0 auto 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.seg.active { background: var(--active); border-color: var(--warn); }
+.seg.unsure { border-left: 5px solid var(--warn); }
+.seg > .times, .seg > textarea, .seg > .warnline, .seg > .chips, .seg > .ai { grid-column: 2; }
+.seg > .num { grid-row: 1 / span 6; }
+.warnline { font-size: 12px; color: var(--warn); }
+.oddline { font-size: 12px; color: var(--warn); grid-column: 2; }
+.oddline mark { background: rgba(255, 120, 80, .25); color: inherit; border-bottom: 2px wavy #e8533c; padding: 0 2px; border-radius: 3px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.chips button { font: 15px var(--font); padding: 3px 10px; border-radius: 99px; background: var(--ok-soft); border-color: var(--ok); }
+.chips button s { color: var(--danger); }
+.seg .num .mic.rec { background: var(--danger); color: #fff; border-color: var(--danger); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
+.seg .num { grid-row: span 3; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; }
+.seg .num button { padding: 2px 0; width: 30px; }
+.times { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.times input { width: 78px; font: 13px ui-monospace, monospace; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.times button { padding: 0 6px; font-size: 12px; }
+.times .tools { margin-left: auto; display: flex; gap: 4px; }
+textarea { width: 100%; font: 18px/1.6 var(--font); padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; min-height: 44px; background: var(--panel); color: var(--ink); }
+textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.ai { font-size: 13px; color: var(--muted); }
+.ai s { color: var(--danger); }
+.empty { text-align: center; color: var(--muted); margin-top: 12vh; }
+header button { font-size: 14px; }
+dialog#vocabDlg { width: min(720px, calc(100vw - 32px)); max-height: 85vh; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--ink); padding: 16px; }
+dialog#vocabDlg::backdrop { background: rgba(0,0,0,.45); }
+.vhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 17px; }
+.vrow { display: flex; gap: 8px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
+.vrow input { flex: 1; min-width: 140px; font: 16px var(--font); padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.vitem { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.vitem .w { color: var(--danger); text-decoration: line-through; }
+.vitem .r { color: var(--ok); font-weight: 600; }
+.vitem .meta { margin-left: auto; font-size: 12px; color: var(--muted); }
+.vitem.off { opacity: .5; }
+.vitem .ex { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+dialog h4 { margin: 14px 0 6px; }
+dialog#askDlg { width: min(420px, calc(100vw - 32px)); border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--ink); padding: 18px; }
+dialog#askDlg::backdrop { background: rgba(0,0,0,.45); }
+#askMsg { white-space: pre-line; margin: 0 0 16px; font-size: 16px; }
+.askBtns { display: flex; gap: 8px; justify-content: flex-end; }
+.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+@media (max-width: 760px) {
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; height: auto; }
+  select { max-width: 100%; }
+  aside { max-height: 30vh; border-right: 0; border-bottom: 1px solid var(--line); }
+  main { overflow: visible; }
+  .list { overflow: visible; }
+  header .stat { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>✏️ แก้ซับลาว</h1>
+  <span class="stat" id="stat"></span>
+  <button id="btnVocab" title="สมุดคำเฉพาะของทีม">📖 สมุดคำ <span id="sugBadge" class="badge b-draft" hidden></span></button>
+</header>
+<dialog id="askDlg">
+  <p id="askMsg"></p>
+  <div class="askBtns"><button id="askCancel">ยกเลิก</button><button id="askOk" class="done">ตกลง</button></div>
+</dialog>
+<dialog id="vocabDlg">
+  <div class="vhead"><b>📖 สมุดคำเฉพาะของทีม</b><button id="vocabClose">✕</button></div>
+  <p class="hint">AI ฟังคำไหนผิดซ้ำๆ ใส่ไว้ที่นี่ ระบบจะแก้ให้อัตโนมัติทุกครั้งที่สร้างซับ<br>
+    ⚠️ ใส่คำผิดให้ยาวพอ (อย่างน้อย 3 ตัวอักษร) ไม่งั้นอาจไปแก้คำอื่นที่ถูกอยู่แล้ว</p>
+  <form id="ruleForm" class="vrow">
+    <input id="ruleWrong" placeholder="AI เขียนผิดเป็น เช่น ເລຂາໃສ່" required>
+    <span>→</span>
+    <input id="ruleRight" placeholder="คำที่ถูก เช่น ເລຂາໄຊ" required>
+    <button class="primary">＋ เพิ่ม</button>
+  </form>
+  <h4>กฎที่ใช้อยู่</h4>
+  <div id="ruleList"></div>
+  <h4>💡 ระบบเห็นว่าทีมแก้คำเหล่านี้บ่อย (กดยืนยันเพื่อใช้)</h4>
+  <div id="sugList"></div>
+</dialog>
+<div class="layout">
+  <aside>
+    <label class="upload">⬆️ อัปโหลดคลิป
+      <input type="file" id="file" accept="video/*,audio/*" hidden>
+    </label>
+    <div id="clips"></div>
+  </aside>
+  <main>
+    <div class="player" id="player" hidden>
+      <div class="vwrap">
+        <video id="video" controls playsinline preload="metadata"></video>
+        <div class="capstage" id="capStage"><div id="cap"></div></div>
+      </div>
+      <div class="bar">
+        <button id="btnTranscribe" class="primary">🤖 สร้างซับด้วย AI</button>
+        <select id="engine" title="เลือก AI ที่ใช้ทำซับ">
+          <option value="omni2int8">OmniASR v2 ⚡ ย่อ + ภาษาลาวช่วยเดา · ขายได้ ทีม ~12% รันด้วย CPU</option>
+          <option value="omni1int8">OmniASR v1 ⚡ ย่อ 355MB · ขายได้ รันด้วย CPU (ตัวทดลองสำหรับมือถือ)</option>
+          <option value="ultra3fast">Ultra3 ⚡ เร็ว · แม่นเท่า Ultra3 แต่เร็วกว่า</option>
+          <option value="ultra3">Ultra3 · ผสมสมอง v3+v6 แม่นที่สุดตอนนี้</option>
+          <option value="v6">v6 · + เสียงรบกวนจริง</option>
+          <option value="ultra2">Ultra2 · ผสมสมอง v3+v5</option>
+          <option value="v5">v5 · ใหม่ล่าสุด + ข่าว RFA ฟังเสียงข่าว/สัมภาษณ์เก่งขึ้น</option>
+          <option value="ultra">Ultra · ผสมสมอง v3+v4</option>
+          <option value="v4">v4 · รุ่นใหม่ แม่นขึ้น ฟังภาษาพูดเก่งกว่า</option>
+          <option value="v3" selected>v3 · รุ่นเดิม เสถียร</option>
+          <option value="buzz">BuzzASR · ตัวนอก (ใหญ่ ช้า)</option>
+        </select>
+        <label class="hint" title="ตรงจุดที่ AI ลังเล ให้เสนอคำอันดับ 2 เป็นปุ่มให้แตะ (ช้าลงประมาณ 1.5 เท่า)"><input type="checkbox" id="assist" checked> ขอคำทางเลือก</label>
+        <span class="grow"></span>
+        <span id="dirty" class="hint"></span>
+        <button id="btnSave">💾 บันทึกร่าง</button>
+        <button id="btnDone" class="done">✅ ตรวจเสร็จ</button>
+        <button id="btnSrt">⬇️ SRT</button>
+        <button id="btnStyle" title="ฟอนต์ลาว สี ท็อปปิ้ง แอนิเมชัน">🎨 แต่งซับ</button>
+        <button id="btnExport" class="primary" title="ส่งออกวิดีโอที่ฝังซับแอนิเมชัน (ภาพเหมือนที่เห็นบนจอ)">🎬 ส่งออก MP4</button>
+        <span id="exportState" class="hint"></span>
+        <button id="btnApplyVocab" title="ใช้สมุดคำแก้ซับนี้อีกรอบ">📖 ใช้สมุดคำ</button>
+        <a href="/ab.html" target="_blank" class="hint" title="ฟังเทียบ AI สองตัวแบบปิดชื่อ">⚖️ ฟังเทียบ AI</a>
+      </div>
+      <div class="stylepanel" id="stylePanel" hidden></div>
+      <div class="bar hint">
+        <label><input type="checkbox" id="onlyUnsure"> แสดงเฉพาะบรรทัดที่ AI ไม่มั่นใจ ⚠️</label>
+        <span id="unsureCount"></span>
+      </div>
+      <div class="bar hint">วิธีแก้เร็ว: แตะ <b>ปุ่มคำทางเลือก</b> ใต้บรรทัด · หรือกด <b>🎤</b> แล้วพูดประโยคที่ถูก · คีย์ลัด: <b>Ctrl+Enter</b> เล่นบรรทัดนี้ซ้ำ · <b>Ctrl+S</b> บันทึก · <b>Alt+↓/↑</b> บรรทัดถัดไป/ก่อนหน้า · <b>Ctrl+K</b> เล่น/หยุด</div>
+    </div>
+    <div class="list" id="list"><p class="empty">👈 เลือกคลิป หรืออัปโหลดคลิปใหม่</p></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="/fonts/caprender.js"></script>
+<script src="/fonts/capeditor.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const video = $("#video");
+let clips = [], cur = null, segs = [], dirty = false, active = -1, stopAt = null, status = "none";
+let recIdx = -1, recorder = null, recChunks = [];  // 🎤 พูดแก้
+
+function toast(msg, ms = 2500) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), ms);
+}
+function fmt(t) {
+  t = Math.max(0, t || 0);
+  const m = Math.floor(t / 60), s = (t - m * 60).toFixed(2).padStart(5, "0");
+  return `${m}:${s}`;
+}
+function parseT(v) {
+  const p = String(v).trim().split(":").map(Number);
+  if (p.some(isNaN)) return null;
+  return p.length === 2 ? p[0] * 60 + p[1] : p[0];
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function setDirty(v) { dirty = v; $("#dirty").textContent = v ? "● ยังไม่บันทึก" : ""; }
+
+async function api(url, opt = {}) {
+  const r = await fetch(url, opt);
+  if (!r.ok) {
+    let msg = r.statusText;
+    try { msg = (await r.json()).detail || msg; } catch {}
+    const e = new Error(msg); e.status = r.status; throw e;
+  }
+  return r.json();
+}
+
+async function loadClips() {
+  const d = await api("/api/clips");
+  clips = d.clips;
+  $("#stat").innerHTML = `ข้อมูลเทรนจากทีม: <b>${d.train.lines}</b> ประโยค · <b>${d.train.minutes}</b> นาที`;
+  const label = { none: "ยังไม่มีซับ", draft: "ร่าง", corrected: "ตรวจแล้ว" };
+  $("#clips").innerHTML = clips.length ? clips.map((c) => `
+    <div class="clip ${c.name === cur ? "sel" : ""}" data-n="${esc(c.name)}">
+      <div class="n">${esc(c.name)}</div>
+      <div class="m"><span class="badge b-${c.status}">${label[c.status]}</span>${c.mb} MB${c.lines ? ` · ${c.lines} บรรทัด` : ""}${c.ai_cer != null ? ` · AI ผิด ${c.ai_cer}%` : ""}</div>
+    </div>`).join("") : `<p class="hint">ยังไม่มีคลิป<br>อัปโหลด หรือวางไฟล์ใน data\\my_clips</p>`;
+}
+
+// หน้าต่างยืนยันในหน้าเว็บเอง (เบราว์เซอร์บางตัว เช่นในแอป Claude บล็อก confirm() แล้วตอบ "ยกเลิก" ให้เอง)
+function ask(msg, okText = "ตกลง") {
+  return new Promise((resolve) => {
+    const d = $("#askDlg");
+    $("#askMsg").textContent = msg;
+    $("#askOk").textContent = okText;
+    const done = (v) => { d.close(); $("#askOk").onclick = $("#askCancel").onclick = null; resolve(v); };
+    $("#askOk").onclick = () => done(true);
+    $("#askCancel").onclick = () => done(false);
+    d.oncancel = (e) => { e.preventDefault(); done(false); };
+    d.showModal();
+    $("#askOk").focus();
+  });
+}
+
+$("#clips").addEventListener("click", async (e) => {
+  const el = e.target.closest(".clip"); if (!el) return;
+  if (dirty && !(await ask("ยังไม่ได้บันทึก จะเปลี่ยนคลิปเลยไหม?", "เปลี่ยนเลย"))) return;
+  openClip(el.dataset.n);
+});
+
+async function openClip(name) {
+  cur = name; setDirty(false); active = -1; stopAt = null;
+  $("#player").hidden = false;
+  video.src = "/media/" + encodeURIComponent(name);
+  document.querySelectorAll(".clip").forEach((c) => c.classList.toggle("sel", c.dataset.n === name));
+  let doc = null;
+  try {
+    doc = await api(`/api/clips/${encodeURIComponent(name)}/subs`);
+    segs = doc.segments; status = doc.status;
+  } catch (e) {
+    if (e.status !== 404) toast("โหลดซับไม่ได้: " + e.message);
+    segs = []; status = "none";
+  }
+  capStyle = await styleForClip(doc);
+  if (editor) editor.set(capStyle);
+  $("#cap")._key = null; $("#exportState").textContent = "";
+  alignWords();
+  $("#btnTranscribe").textContent = segs.length ? "🤖 สร้างซับใหม่" : "🤖 สร้างซับด้วย AI";
+  render();
+}
+
+function render() {
+  if (!segs.length) {
+    $("#list").innerHTML = `<p class="empty">ยังไม่มีซับ — กด <b>🤖 สร้างซับด้วย AI</b> หรือ <button id="addFirst">+ พิมพ์เอง</button></p>`;
+    $("#addFirst").onclick = () => { segs = [{ start: video.currentTime, end: video.currentTime + 2, text: "", ai_text: null }]; setDirty(true); render(); };
+    showCap(); return;
+  }
+  const UNSURE = 0.3;  // ทดสอบกับคลิปจริง: 30% จับบรรทัดผิดได้ ~9/12 โดยไฮไลต์เกินน้อย
+  const isUnsure = (s) => s.conf != null && s.conf < UNSURE && s.text === s.ai_text;
+  const oddOf = (s) => (s.odd_text === s.text ? s.odd || [] : []);  // คำแปลก (คิดจากข้อความล่าสุดเท่านั้น)
+  const isFlag = (s) => isUnsure(s) || oddOf(s).length > 0;
+  const nUnsure = segs.filter(isFlag).length;
+  $("#unsureCount").textContent = segs.some((s) => s.conf != null || s.odd) ? `(${nUnsure} บรรทัด)` : "";
+  const only = $("#onlyUnsure").checked;
+  $("#list").innerHTML = segs.map((s, i) => {
+    if (only && !isFlag(s)) return "";
+    const odd = oddOf(s);
+    const chips = (s.chips || []).filter((c) => s.text.includes(c.wrong));
+    return `
+    <div class="seg ${i === active ? "active" : ""} ${isUnsure(s) ? "unsure" : ""}" data-i="${i}">
+      <div class="num">${i + 1}<button data-a="play" title="เล่นบรรทัดนี้">▶</button>
+        <button data-a="mic" class="mic ${recIdx === i ? "rec" : ""}" title="กดแล้วพูดประโยคที่ถูก กดอีกครั้งเพื่อหยุด">${recIdx === i ? "⏹" : "🎤"}</button></div>
+      <div class="times">
+        <input data-f="start" value="${fmt(s.start)}"><button data-a="setStart" title="ใช้เวลาปัจจุบันของวิดีโอ">⏱</button>
+        →
+        <input data-f="end" value="${fmt(s.end)}"><button data-a="setEnd" title="ใช้เวลาปัจจุบันของวิดีโอ">⏱</button>
+        <span class="tools">
+          <button data-a="split" title="แยกบรรทัดตรงตำแหน่งเคอร์เซอร์">✂️ แยก</button>
+          <button data-a="merge" title="รวมกับบรรทัดถัดไป">⤵ รวม</button>
+          <button data-a="add" title="เพิ่มบรรทัดใหม่ต่อจากนี้">＋</button>
+          <button data-a="del" title="ลบบรรทัด">🗑</button>
+        </span>
+      </div>
+      <textarea rows="1" data-f="text">${esc(s.text)}</textarea>
+      ${isUnsure(s) ? `<div class="warnline">⚠️ AI ไม่มั่นใจบรรทัดนี้ (${Math.round(s.conf * 100)}%) ฟังให้ดี</div>` : ""}
+      ${odd.length ? `<div class="oddline" title="ส่วนนี้ไม่เหมือนภาษาลาวที่ระบบเคยเห็น อาจเป็นคำไร้ความหมายหรือสะกดผิด">🔍 คำแปลก: ${odd.map((f) => `<mark>${esc(f)}</mark>`).join(" ")}</div>` : ""}
+      ${chips.length ? `<div class="chips">ทางเลือก: ${chips.map((c) => `
+        <button data-a="chip" data-w="${esc(c.wrong)}" data-r="${esc(c.right)}" title="แตะเพื่อเปลี่ยน ${esc(c.wrong)} → ${esc(c.right)} (จาก ${esc(c.src)}${c.p ? " " + Math.round(c.p * 100) + "%" : ""})">
+          <s>${esc(c.wrong)}</s> → <b>${esc(c.right)}</b></button>`).join("")}</div>` : ""}
+      <div class="ai" ${s.ai_text != null && s.ai_text !== s.text ? "" : "hidden"}>AI เดิม: <s>${esc(s.ai_text || "")}</s></div>
+    </div>`;
+  }).join("") || `<p class="empty">ไม่มีบรรทัดที่ AI ไม่มั่นใจ 🎉</p>`;
+  document.querySelectorAll("textarea").forEach(autoGrow);
+  showCap();
+}
+function autoGrow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
+
+function playSeg(i) {
+  const s = segs[i]; if (!s) return;
+  active = i; markActive();
+  video.currentTime = s.start; stopAt = s.end; video.play();
+}
+function markActive() {
+  document.querySelectorAll(".seg").forEach((el) => el.classList.toggle("active", +el.dataset.i === active));
+}
+// ---------- ซับแอนิเมชันบนวิดีโอ (ตัววาดเดียวกับไฟล์ MP4 ที่ส่งออก: /fonts/caprender.js) ----------
+let capStyle = null, editor = null, fontsReady = false, styleSaveT = null;
+function layoutStage() {
+  // วางกรอบซับให้ตรงพื้นที่ภาพจริง (วิดีโอแนวตั้งในกรอบแนวนอนมีแถบดำข้าง)
+  const st = $("#capStage"), vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) { st.style.display = "none"; return; }
+  const ew = video.clientWidth, eh = video.clientHeight, k = Math.min(ew / vw, eh / vh);
+  const w = vw * k, h = vh * k;
+  Object.assign(st.style, { display: "", left: video.offsetLeft + (ew - w) / 2 + "px", top: video.offsetTop + (eh - h) / 2 + "px", width: w + "px", height: h + "px" });
+}
+function showCap() {
+  if (!fontsReady) return;
+  const t = video.currentTime;
+  CapRender.render($("#cap"), capStyle, CapRender.segAt(segs, t), t, $("#capStage").clientHeight);
+}
+(function capLoop() { if (!video.paused) showCap(); requestAnimationFrame(capLoop); })();  // แอนิเมชันลื่นระหว่างเล่น
+video.addEventListener("loadedmetadata", () => { layoutStage(); showCap(); });
+new ResizeObserver(() => { layoutStage(); if (capStyle) { $("#cap")._key = null; showCap(); } }).observe(video);
+
+async function initStyle() {
+  await CapRender.loadFonts("/fonts/v2/");
+  fontsReady = true;
+  editor = CapEditor.mount($("#stylePanel"), capStyle, (s) => {
+    capStyle = s; showCap();
+    clearTimeout(styleSaveT);
+    styleSaveT = setTimeout(() => { if (cur) api(`/api/clips/${encodeURIComponent(cur)}/style`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style: s }) }).catch((e) => toast("บันทึกสไตล์ไม่ได้: " + e.message)); }, 600);
+  });
+  showCap();
+}
+// เวลาจริงของแต่ละคำ (จาก AI) — จับให้บรรทัดที่ยังไม่มี/เพิ่งแก้ข้อความ ทำเบื้องหลังหลังเปิดคลิป/บันทึก
+let aligning = false;
+async function alignWords() {
+  const clip = cur;
+  if (aligning || !clip || dirty || !segs.some((s) => s.text.trim() && s.wtext !== s.text)) return;
+  aligning = true;
+  try {
+    const r = await api(`/api/clips/${encodeURIComponent(clip)}/align`, { method: "POST" });
+    if (clip !== cur || dirty) return;  // ระหว่างรอ ผู้ใช้เปลี่ยนคลิป/แก้ต่อ → ไม่เอามาทับ
+    r.words.forEach((w, i) => { const s = segs[i]; if (s && s.text === w.text && Math.abs(s.start - w.start) < 1e-3) { s.words = w.words; s.wtext = w.wtext; } });
+    $("#cap")._key = null; showCap();
+    if (r.aligned) toast(`⏱ จับเวลารายคำแล้ว ${r.aligned} บรรทัด (คาราโอเกะตรงเสียง)`);
+  } catch (e) { console.warn("จับเวลาคำไม่ได้", e); }
+  finally { aligning = false; }
+}
+async function styleForClip(doc) {
+  if (doc && doc.style) return CapRender.normalize(doc.style);
+  try { const d = await api("/api/style/default"); if (d.style) return CapRender.normalize(d.style); } catch {}
+  return CapRender.normalize(null);
+}
+$("#btnStyle").onclick = () => { const p = $("#stylePanel"); p.hidden = !p.hidden; $("#btnStyle").classList.toggle("primary", !p.hidden); };
+
+$("#btnExport").onclick = async () => {
+  if (!cur) return;
+  if (!segs.length) { toast("ยังไม่มีซับ"); return; }
+  if (dirty) await save("draft");
+  if (dirty) return;  // บันทึกไม่ผ่าน
+  const b = $("#btnExport"), st = $("#exportState"), clip = cur;
+  b.disabled = true; st.textContent = "⏳ เริ่มส่งออก...";
+  try {
+    const { job } = await api(`/api/clips/${encodeURIComponent(clip)}/export`, { method: "POST" });
+    const phase = { start: "เตรียม", render: "วาดซับ", encode: "รวมเป็นวิดีโอ", done: "เสร็จ" };
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const j = await api(`/api/jobs/${job}`);
+      if (j.status === "error") throw new Error(j.error);
+      if (j.status === "done") {
+        st.innerHTML = `✅ <a href="/api/exports/${encodeURIComponent(j.file)}" download>⬇️ ${esc(j.file)}</a> (${j.mb} MB · ${j.seconds} วิ)`;
+        toast("🎬 ส่งออกเสร็จแล้ว", 4000); break;
+      }
+      st.textContent = `🎬 ${phase[j.phase] || j.phase} ${j.pct || 0}%`;
+    }
+  } catch (e) { st.textContent = ""; toast("ส่งออกไม่สำเร็จ: " + e.message, 6000); }
+  b.disabled = false;
+};
+
+video.addEventListener("timeupdate", () => {
+  const t = video.currentTime;
+  if (stopAt != null && t >= stopAt) { video.pause(); stopAt = null; }
+  const i = segs.findIndex((s) => t >= s.start && t < s.end);
+  if (i >= 0 && i !== active) {
+    active = i; markActive();
+    const el = document.querySelector(`.seg[data-i="${i}"]`);
+    if (el && !el.contains(document.activeElement) && !video.paused) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  showCap();
+});
+video.addEventListener("seeked", showCap);
+
+$("#list").addEventListener("input", (e) => {
+  const el = e.target.closest(".seg"); if (!el) return;
+  const i = +el.dataset.i, f = e.target.dataset.f;
+  if (f === "text") {
+    segs[i].text = e.target.value; autoGrow(e.target);
+    el.querySelector(".ai").hidden = segs[i].ai_text == null || segs[i].ai_text === segs[i].text;
+    showCap();
+  }
+  setDirty(true);
+});
+$("#list").addEventListener("change", (e) => {
+  const el = e.target.closest(".seg"); if (!el) return;
+  const i = +el.dataset.i, f = e.target.dataset.f;
+  if (f === "start" || f === "end") {
+    const v = parseT(e.target.value);
+    if (v == null) { e.target.value = fmt(segs[i][f]); return toast("รูปแบบเวลา เช่น 1:05.30"); }
+    segs[i][f] = v; e.target.value = fmt(v); setDirty(true);
+  }
+  if (f === "text") recheckOdd(i, el);
+});
+// แก้ข้อความเสร็จ (ออกจากช่อง) → ตรวจคำแปลกใหม่เฉพาะบรรทัดนั้น
+async function recheckOdd(i, el) {
+  const text = segs[i].text;
+  try {
+    const r = await post("/api/odd", { text });
+    if (segs[i].text !== text) return;  // ระหว่างรอ มีการแก้ต่อแล้ว
+    segs[i].odd = r.odd; segs[i].odd_text = text;
+    el.querySelector(".oddline")?.remove();
+    if (r.odd.length) {
+      const d = document.createElement("div");
+      d.className = "oddline";
+      d.innerHTML = `🔍 คำแปลก: ${r.odd.map((f) => `<mark>${esc(f)}</mark>`).join(" ")}`;
+      el.querySelector("textarea").after(d);
+    }
+  } catch {}
+}
+$("#list").addEventListener("focusin", (e) => {
+  const el = e.target.closest(".seg"); if (el) { active = +el.dataset.i; markActive(); }
+});
+$("#list").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-a]"); if (!b) return;
+  const el = b.closest(".seg"), i = +el.dataset.i, s = segs[i], a = b.dataset.a;
+  if (a === "play") return playSeg(i);
+  if (a === "mic") return toggleMic(i);
+  if (a === "chip") {
+    s.text = s.text.replace(b.dataset.w, b.dataset.r);
+    setDirty(true); render();
+    return toast(`เปลี่ยน ${b.dataset.w} → ${b.dataset.r}`);
+  }
+  if (a === "setStart") { s.start = video.currentTime; }
+  if (a === "setEnd") { s.end = video.currentTime; }
+  if (a === "split") {
+    const ta = el.querySelector("textarea");
+    const pos = ta.selectionStart || Math.floor(s.text.length / 2);
+    const t = video.currentTime;
+    const mid = t > s.start + 0.2 && t < s.end - 0.2 ? t : s.start + (s.end - s.start) * (pos / Math.max(1, s.text.length));
+    const b2 = { start: mid, end: s.end, text: s.text.slice(pos).trim(), ai_text: null };
+    s.end = mid; s.text = s.text.slice(0, pos).trim();
+    segs.splice(i + 1, 0, b2);
+  }
+  if (a === "merge") {
+    const n = segs[i + 1]; if (!n) return toast("ไม่มีบรรทัดถัดไป");
+    s.end = n.end; s.text = (s.text + " " + n.text).trim();
+    s.ai_text = s.ai_text != null || n.ai_text != null ? ((s.ai_text || "") + " " + (n.ai_text || "")).trim() : null;
+    segs.splice(i + 1, 1);
+  }
+  if (a === "add") {
+    const next = segs[i + 1];
+    const st = s.end, en = next ? Math.max(st + 0.5, next.start) : st + 2;
+    segs.splice(i + 1, 0, { start: st, end: en, text: "", ai_text: null });
+  }
+  if (a === "del") { if (!(await ask("ลบบรรทัดนี้?", "ลบ"))) return; segs.splice(i, 1); }
+  setDirty(true); render();
+  if (a === "add" || a === "split") document.querySelector(`.seg[data-i="${i + 1}"] textarea`)?.focus();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (!cur) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save("draft"); }
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); if (active >= 0) playSeg(active); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); stopAt = null; video.paused ? video.play() : video.pause(); }
+  if (e.altKey && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+    e.preventDefault();
+    const n = Math.min(segs.length - 1, Math.max(0, active + (e.key === "ArrowDown" ? 1 : -1)));
+    document.querySelector(`.seg[data-i="${n}"] textarea`)?.focus(); playSeg(n);
+  }
+});
+
+async function save(st) {
+  if (!cur) return;
+  const bad = segs.findIndex((s) => s.end <= s.start);
+  if (bad >= 0) { toast(`บรรทัด ${bad + 1}: เวลาจบต้องมากกว่าเวลาเริ่ม`); return; }
+  // ❓ = คำที่ AI ไม่แน่ใจ ต้องให้คนฟังยืนยันก่อน → ห้ามส่งเป็นข้อมูลเทรนถ้ายังเหลืออยู่
+  const unsure = segs.map((s, i) => (s.text.includes("❓") ? i + 1 : 0)).filter(Boolean);
+  if (st === "corrected" && unsure.length) { toast(`ยังมี ❓ ที่บรรทัด ${unsure.join(", ")} — ฟังแล้วแก้ให้ถูก และลบ ❓ ออกก่อน`, 6000); return; }
+  if (st === "corrected" && !(await ask("ยืนยันว่าตรวจครบทุกบรรทัดแล้ว?\nระบบจะเก็บเสียง+ข้อความไว้เป็นข้อมูลเทรน AI", "✅ ยืนยัน ตรวจเสร็จ"))) return;
+  try {
+    const r = await api(`/api/clips/${encodeURIComponent(cur)}/subs`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ segments: segs, status: st }),
+    });
+    setDirty(false); status = r.status;
+    toast(st === "corrected" ? `✅ ตรวจเสร็จ · เก็บข้อมูลเทรน ${r.exported} ประโยค${r.ai_cer != null ? ` · AI ผิด ${r.ai_cer}%` : ""}${r.learned ? ` · 💡 เจอคำที่แก้ ${r.learned} จุด (ดูในสมุดคำ)` : ""}` : "💾 บันทึกแล้ว", 4000);
+    if (r.learned) loadVocab();
+    loadClips();
+    alignWords();
+  } catch (e) { toast("บันทึกไม่สำเร็จ: " + e.message); }
+}
+$("#btnSave").onclick = () => save("draft");
+$("#btnDone").onclick = () => save("corrected");
+$("#btnSrt").onclick = async () => {
+  if (dirty) await save("draft");
+  location.href = `/api/clips/${encodeURIComponent(cur)}/srt`;
+};
+
+$("#btnTranscribe").onclick = async () => {
+  if (segs.length && !(await ask("สร้างซับใหม่จะทับของเดิมทั้งหมด (รวมที่แก้ไว้) ต่อเลยไหม?", "สร้างใหม่"))) return;
+  const b = $("#btnTranscribe"); b.disabled = true; b.textContent = "⏳ AI กำลังฟัง...";
+  const clip = cur;
+  try {
+    try { localStorage.setItem("engine", $("#engine").value); } catch {}
+    // ถอดแบบเบื้องหลัง: ซับขึ้นทีละช่วงระหว่างที่ AI ยังฟังต่อ (ไม่ต้องรอทั้งคลิป)
+    const { job } = await api(`/api/clips/${encodeURIComponent(clip)}/transcribe_start?engine=${$("#engine").value}&assist=${$("#assist").checked}`, { method: "POST" });
+    segs = []; render();
+    let got = 0;
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 1500));
+      const j = await api(`/api/jobs/${job}?since=${got}`);
+      if (j.status === "error") throw new Error(j.error);
+      if (j.status === "done") {
+        if (cur === clip) { segs = j.doc.segments; status = "draft"; setDirty(false); render(); }
+        const took = j.doc.seconds, len = j.doc.audio_seconds || j.total || 0;
+        const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+        const speed = len && took ? ` · เร็วกว่าความยาวคลิป ${(len / took).toFixed(1)} เท่า` : "";
+        toast(`✅ เสร็จแล้ว: ${j.doc.segments.length} บรรทัด · ใช้เวลา ${mmss(took)} กับคลิปยาว ${mmss(len)}${speed}`, 10000);
+        break;
+      }
+      if (j.segments && j.segments.length && cur === clip) {
+        segs = segs.concat(j.segments); got = j.count; render();
+      }
+      if (j.total) b.textContent = `⏳ กำลังฟัง ${fmt(j.done).split(".")[0]} / ${fmt(j.total).split(".")[0]} (${Math.round((100 * j.done) / j.total)}%)`;
+    }
+    loadClips();
+  } catch (e) { toast("สร้างซับไม่สำเร็จ: " + e.message, 5000); }
+  b.disabled = false; b.textContent = "🤖 สร้างซับใหม่";
+};
+
+$("#file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const fd = new FormData(); fd.append("file", f);
+  toast(`⬆️ กำลังอัปโหลด ${f.name}...`, 60000);
+  try {
+    const r = await api("/api/upload", { method: "POST", body: fd });
+    await loadClips(); openClip(r.name); toast("อัปโหลดแล้ว");
+  } catch (err) { toast("อัปโหลดไม่สำเร็จ: " + err.message); }
+  e.target.value = "";
+});
+
+// ---------- 🎤 พูดแก้ ----------
+async function toggleMic(i) {
+  if (recorder) {  // กำลังอัดอยู่ → หยุด (ถ้ากดบรรทัดอื่น ก็หยุดอันเดิมก่อน)
+    recorder.stop();
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia) return toast("เบราว์เซอร์นี้ใช้ไมค์ไม่ได้ ลองเปิดใน Chrome", 5000);
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { return toast("เปิดไมค์ไม่ได้: กดอนุญาตให้ใช้ไมค์ หรือเปิดหน้านี้ใน Chrome", 6000); }
+  video.pause();
+  recChunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = (e) => e.data.size && recChunks.push(e.data);
+  recorder.onstop = async () => {
+    stream.getTracks().forEach((t) => t.stop());
+    const blob = new Blob(recChunks, { type: recorder.mimeType || "audio/webm" });
+    const idx = recIdx;
+    recorder = null; recIdx = -1; render();
+    if (blob.size < 2000) return toast("ไม่ได้ยินเสียง ลองใหม่อีกครั้ง");
+    toast("⏳ AI กำลังฟังเสียงคุณ...", 30000);
+    const fd = new FormData();
+    fd.append("file", blob, "voice." + (blob.type.includes("ogg") ? "ogg" : "webm"));
+    try {
+      const r = await api("/api/asr", { method: "POST", body: fd });
+      if (!r.text) return toast("ฟังไม่ออก ลองพูดช้าๆ ชัดๆ อีกครั้ง");
+      segs[idx].text = r.text; setDirty(true); render();
+      toast(`🎤 ได้ยินว่า: ${r.text}`, 4000);
+    } catch (e) { toast("ฟังเสียงไม่สำเร็จ: " + e.message, 5000); }
+  };
+  recorder.start();
+  recIdx = i; render();
+  toast("🔴 กำลังฟัง... พูดประโยคที่ถูก แล้วกด ⏹ เพื่อหยุด", 60000);
+}
+$("#onlyUnsure").addEventListener("change", render);
+
+// ---------- สมุดคำ ----------
+const post = (url, body) => api(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+function renderVocab(d) {
+  $("#ruleList").innerHTML = d.rules.length ? d.rules.map((r) => `
+    <div class="vitem ${r.enabled === false ? "off" : ""}">
+      <span class="w">${esc(r.wrong)}</span> → <span class="r">${esc(r.right)}</span>
+      <span class="meta">${r.source === "auto" ? "เรียนรู้จากทีม" : "เพิ่มเอง"} · แก้ไปแล้ว ${r.count || 0} ครั้ง</span>
+      <button data-v="toggle" data-w="${esc(r.wrong)}">${r.enabled === false ? "เปิด" : "ปิด"}</button>
+      <button data-v="del" data-w="${esc(r.wrong)}">🗑</button>
+    </div>`).join("") : `<p class="hint">ยังไม่มีกฎ — เพิ่มด้านบน หรือรอให้ระบบเรียนรู้จากซับที่ทีมกด "ตรวจเสร็จ"</p>`;
+  $("#sugList").innerHTML = d.suggestions.length ? d.suggestions.map((s) => `
+    <div class="vitem">
+      <span class="w">${esc(s.wrong)}</span> → <span class="r">${esc(s.right)}</span>
+      <span class="meta">แก้ ${s.count} ครั้ง</span>
+      <button class="done" data-v="accept" data-w="${esc(s.wrong)}" data-r="${esc(s.right)}">✓ ใช้</button>
+      <button data-v="dismiss" data-w="${esc(s.wrong)}" data-r="${esc(s.right)}">✕ ไม่ใช้</button>
+      <span class="ex">ตัวอย่าง: ${s.examples.map(esc).join(" · ")}</span>
+    </div>`).join("") : `<p class="hint">ยังไม่มีคำแนะนำ</p>`;
+  const n = d.suggestions.length;
+  $("#sugBadge").hidden = !n; $("#sugBadge").textContent = n;
+}
+async function loadVocab() { try { renderVocab(await api("/api/vocab")); } catch {} }
+$("#btnVocab").onclick = () => { loadVocab(); $("#vocabDlg").showModal(); };
+$("#vocabClose").onclick = () => $("#vocabDlg").close();
+$("#ruleForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    renderVocab(await post("/api/vocab/rules", { wrong: $("#ruleWrong").value, right: $("#ruleRight").value }));
+    $("#ruleWrong").value = $("#ruleRight").value = ""; toast("เพิ่มคำแล้ว");
+  } catch (err) { toast(err.message); }
+};
+$("#vocabDlg").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-v]"); if (!b) return;
+  const body = { wrong: b.dataset.w, right: b.dataset.r || "" };
+  const url = { toggle: "/api/vocab/rules/toggle", del: "/api/vocab/rules/delete", accept: "/api/vocab/suggestions/accept", dismiss: "/api/vocab/suggestions/dismiss" }[b.dataset.v];
+  try { renderVocab(await post(url, body)); } catch (err) { toast(err.message); }
+});
+$("#btnApplyVocab").onclick = async () => {
+  if (!cur) return;
+  if (dirty) await save("draft");
+  try {
+    const d = await api(`/api/clips/${encodeURIComponent(cur)}/apply-vocab`, { method: "POST" });
+    segs = d.segments; setDirty(false); render();
+    toast(d.fixed ? `📖 แก้ตามสมุดคำ ${d.fixed} จุด` : "ไม่มีคำที่ต้องแก้");
+  } catch (err) { toast("ใช้สมุดคำไม่ได้: " + err.message); }
+};
+loadVocab();
+
+window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+loadClips();
+initStyle();
+try { const e = localStorage.getItem("engine"); if (e && $(`#engine option[value="${e}"]`)) $("#engine").value = e; } catch {}  // จำ AI ที่เลือกครั้งล่าสุด
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+=== omniASR_CTC_300M_v2_Laos (CER %, ต่ำ = ดี) ===
+FLEURS 100                                    15.9
+ทีม: Download (2)_1794653833                  24.9
+ทีม: Download (3)_1794685833                  11.7
+ทีม: Download (6)_1794783540                  11.3
+ทีม: lekha-chai-lao-30s                        5.3
+SiangLao test                                  7.4
+GPU: 342s / เสียง 12631s = เร็วกว่าเวลาจริง 36.9 เท่า
+CPU (FLEURS 100): 382s / เสียง 1150s = 3.0 เท่า
